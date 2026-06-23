@@ -1,0 +1,27 @@
+[
+    {
+        "id": "1",
+        "name": "برگر",
+        "img": "./img/burger.png"
+    },
+    {
+        "id": "2",
+        "name": "نوشابه",
+        "img": "/img/drink.png"
+    },
+    {
+        "id": "3",
+        "name": "پیتزا",
+        "img": "/img/pizza.png"
+    },
+    {
+        "id": "4",
+        "name": "ساندویچ",
+        "img": "/img/sundewich.png"
+    },
+    {
+        "id": "5",
+        "name": "پاستا",
+        "img": "/img/pasta.png"
+    }
+]

@@ -1,0 +1,27 @@
+[
+    {
+    "id": "1",
+    "name": "گوجه",
+    "img": "/img/others.png"
+  },
+  {
+    "id": "1",
+    "name": "کاهو",
+    "img": "/img/lettuce.png"
+  },
+  {
+    "id": "2",
+    "name": "پنیر",
+    "img": "/img/cheese.png"
+  },
+  {
+    "id": "3",
+    "name": "قارچ",
+    "img": "/img/mushroom.jpg"
+  },
+  {
+    "id": "5",
+    "name": "خیارشور",
+    "img": "/img/vegetable.png"
+  }
+]

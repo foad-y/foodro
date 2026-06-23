@@ -1,0 +1,22 @@
+{
+  "marketName": "مزه چی",
+  "landingTitle": "سامانه فودرو",
+  "priceDelivered": 20000,
+  "logo": "/logo/logobg.png",
+  "favicon": "/logo/logobg.png",
+  "theme": "custom",
+  "colors": {
+    "primary": "#5E9E0A",
+    "secondary": "#0A0F14",
+    "tertiary": "#F5F7FA",
+    "border": "#E2E8F0",
+    "success": "#22C55E",
+    "error": "#EF4444",
+    "warning": "#F59E0B",
+    "primarytext": "#111827",
+    "secondarytext": "#4B5563",
+    "tertiarytext": "#9CA3AF",
+    "gradiantbtnfrom": "#5E9E0A",
+    "gradiantbtnto": "#74C014"
+  }
+}

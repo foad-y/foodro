@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>فاکتور - کلیز برگر</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      font-size: 12px;
+      width: 80mm;
+      margin: 0 auto;
+      padding: 3mm 4mm;
+      color: #000;
+      background: #fff;
+    }
+    .center { text-align: center; }
+    .right  { text-align: right; }
+    .bold   { font-weight: 700; }
+    .divider {
+      border-top: 1px dashed #000;
+      margin: 5px 0;
+    }
+    .thick-divider {
+      border-top: 2px solid #000;
+      margin: 5px 0;
+    }
+    h1 { font-size: 16px; margin-bottom: 2px; font-weight: 900; }
+    .order-number {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      margin: 8px 0;
+      padding: 6px 0;
+      border-top: 2px dashed #000;
+      border-bottom: 2px dashed #000;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 2px 0;
+      font-size: 11px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+    }
+    th, td {
+      font-size: 10px;
+      padding: 3px 2px;
+      border-bottom: 1px dotted #aaa;
+      text-align: center;
+    }
+    th { font-weight: 700; background: #f0f0f0; }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin: 3px 0;
+    }
+    .grand-total {
+      font-size: 14px;
+      font-weight: 900;
+      color: #d32f2f;
+    }
+    .footer { margin-top: 8px; font-size: 10px; color: #555; text-align: center; }
+    .customer-name { font-size: 11px; margin: 3px 0; }
+    @media print {
+      body { width: 80mm; }
+      @page { size: 80mm auto; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="center">
+    <h1>کلیز برگر</h1>
+    <div>فاکتور فروش</div>
+    <div class="divider"></div>
+  </div>
+
+  <div class="center order-number">ONH-101</div>
+
+  <div class="info-row">
+    <span>نوع سفارش:</span>
+    <span class="bold">سالن</span>
+  </div>
+  <div class="info-row">
+    <span>تاریخ:</span>
+    <span>۱۴۰۵/۳/۲۱, ۱:۴۵:۵۲</span>
+  </div>
+  <div class="info-row"><span>مشتری:</span><span class="bold">فواد </span></div>
+  <div class="info-row"><span>تماس:</span><span dir="ltr" class="bold">09023161703</span></div>
+
+  <div class="thick-divider"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>کالا</th>
+        <th>تعداد</th>
+        <th>قیمت</th>
+      </tr>
+    </thead>
+    <tbody><tr>
+          <td>پیتزا مرغ</td>
+          <td>۱</td>
+          <td>۳٬۵۰۰٬۰۰۰ ریال</td>
+        </tr><tr>
+          <td>ساندویچ </td>
+          <td>۱</td>
+          <td>۲٬۱۰۰٬۰۰۰ ریال</td>
+        </tr><tr>
+          <td>ساندویچ مرغ </td>
+          <td>۱</td>
+          <td>۲٬۴۰۰٬۰۰۰ ریال</td>
+        </tr></tbody>
+  </table>
+
+  <div class="thick-divider"></div>
+
+  <div class="total-row">
+    <span>جمع کل:</span>
+    <span>۸٬۰۰۰٬۰۰۰ ریال</span>
+  </div>
+  
+  
+  <div class="total-row" style="color: #2e7d32;">
+    <span>تخفیف (IRANWAR):</span>
+    <span>-۱٬۰۰۰٬۰۰۰ ریال</span>
+  </div>
+  
+  <div class="thick-divider"></div>
+  <div class="total-row grand-total">
+    <span>مبلغ قابل پرداخت:</span>
+    <span>۷٬۰۰۰٬۰۰۰ ریال</span>
+  </div>
+
+  <div class="divider"></div>
+  <div class="footer">
+    <div>سیستم مدیریت کلیز</div>
+    <div>با تشکر از خرید شما</div>
+  </div>
+</body>
+</html>

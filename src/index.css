@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+:root {
+  --color-primary: #F5F5DC;
+  --color-secondary: #F0E0C9;
+  --color-tertiary: #FFDD94;
+  --color-border: #B4B4B4;
+  --color-success: #2BBA51;
+  --color-error: #D94D4D;
+  --color-warning: #FFB800;
+  --color-primarytext: #4B3F31;
+  --color-secondarytext: #7E6A56;
+  --color-tertiarytext: #7F7F7F;
+  --color-gradiantbtnfrom: #ff6900;
+  --color-gradiantbtnto: #fe9a00;
+}
+
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-secondary: var(--color-secondary);
+  --color-tertiary: var(--color-tertiary);
+  --color-border: var(--color-border);
+  --color-success: var(--color-success);
+  --color-error: var(--color-error);
+  --color-warning: var(--color-warning);
+  --color-primarytext: var(--color-primarytext);
+  --color-secondarytext: var(--color-secondarytext);
+  --color-tertiarytext: var(--color-tertiarytext);
+  --color-gradiantbtnfrom: var(--color-gradiantbtnfrom);
+  --color-gradiantbtnto: var(--color-gradiantbtnto);
+}
+
+@font-face {
+  font-family: "BYekan";
+  src: url("/public/fonts/BYekan.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+body {
+  font-family: "BYekan", "IRANSans", Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+/* مخفی کردن scrollbar */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.categories-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-tertiary) var(--color-secondary);
+}
+.categories-scroll::-webkit-scrollbar { height: 6px; }
+.categories-scroll::-webkit-scrollbar-track {
+  background: var(--color-secondary);
+  border-radius: 10px;
+}
+.categories-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-tertiary);
+  border-radius: 10px;
+}
+
+.custom-calendar {
+  border-radius: 16px !important;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  border: 2px solid var(--color-border) !important;
+}
+.custom-calendar .rmdp-day.rmdp-selected span {
+  background-color: var(--color-primarytext) !important;
+}
+.custom-calendar .rmdp-day:hover span {
+  background-color: color-mix(in srgb, var(--color-secondary) 80%, var(--color-primarytext)) !important;
+}
+.custom-calendar .rmdp-header-values { color: var(--color-primarytext); font-weight: bold; }
+.custom-calendar .rmdp-week-day { color: var(--color-primarytext); }
+.custom-calendar .rmdp-arrow { border-color: var(--color-primarytext) !important; }
+.custom-calendar .rmdp-arrow-container:hover { background-color: var(--color-secondary) !important; }

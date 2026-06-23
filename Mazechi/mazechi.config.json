@@ -1,0 +1,20 @@
+{
+  "marketName": "مزه‌چی",
+  "landingTitle": "مزه‌چی",
+  "priceDelivered": 20000,
+  "logo": "/logo/mazechi.jpeg",
+  "favicon": "/logo/mazechi.jpeg",
+  "colors": {
+    "primary": "#5E9E0A",
+    "secondary": "#0A0F14",
+    "tertiary": "#F5F7FA",
+    "border": "#9CA3AF",
+    "success": "#2BBA51",
+    "error": "#D94D4D",
+    "warning": "#FFB800",
+    "primarytext": "#0A0F14",
+    "secondarytext": "#F5F7FA",
+    "tertiarytext": "#6B7280",
+    "desc" : "بعد تغییر اینا باید توی index.css هم تغییر بدیم"
+    }
+}
