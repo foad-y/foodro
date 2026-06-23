@@ -1,7 +1,7 @@
 {
-  "name": "kaliz",
+  "name": "foodro",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.0",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -19,8 +19,8 @@
     "electron:build:linux": "npm run build && electron-builder --linux"
   },
   "build": {
-    "appId": "com.kaliz.restaurant",
-    "productName": "Kaliz",
+    "appId": "com.foodro.restaurant",
+    "productName": "Foodro",
     "asar": true,
     "directories": {
       "output": "release"
