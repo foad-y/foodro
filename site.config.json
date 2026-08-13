@@ -18,5 +18,20 @@
     "tertiarytext": "#9CA3AF",
     "gradiantbtnfrom": "#5E9E0A",
     "gradiantbtnto": "#74C014"
+  },
+  "imageName": {
+    "burger": "برگر",
+    "burgerCat": "برگر مخصوص",
+    "Cheese": "پنیر",
+    "drink": "نوشیدنی",
+    "lettuce": "کاهو",
+    "mushroom-2": "قارچ",
+    "mushroom": "قارچ",
+    "others": "سایر محصولات",
+    "pasta": "پاستا",
+    "pish": "پیش غذا",
+    "pizza": "پیتزا",
+    "sandwich": "ساندویچ",
+    "vegetable": "خیار شور"
   }
 }

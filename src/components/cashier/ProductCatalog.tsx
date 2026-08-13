@@ -120,8 +120,8 @@ const ProductCatalog = () => {
                 const isSelected = false;
                 if (
                   (activeCartItem?.quantity ?? 0) -
-                    (showIngredients?.disabledCount ?? 0) ===
-                    0 && !allNumberDisabled
+                  (showIngredients?.disabledCount ?? 0) ===
+                  0 && !allNumberDisabled
                 )
                   setAllNumberDisabled(true);
                 return (
@@ -206,11 +206,14 @@ const ProductCatalog = () => {
                           <button
                             key={product._id}
                             onClick={() => handleAddToCart(product)}
-                            className="bg-white cursor-pointer rounded-2xl p-2 flex flex-col justify-center items-center shadow-sm hover:shadow-md border border-border hover:border-primary transition-all"
+                            className="relative group bg-white cursor-pointer rounded-2xl p-2 flex flex-col justify-center items-center shadow-sm hover:shadow-md border border-border hover:border-primary transition-all"
                           >
                             <h3 className="text-xs font-bold text-primarytext text-center">
                               {product.name}
                             </h3>
+                            <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 bg-primary text-white text-xs rounded-md px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                              {product.price.toLocaleString()} تومان
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -229,7 +232,7 @@ const ProductCatalog = () => {
                     onClick={() => handleAddToCart(product)}
                     className="bg-white rounded-2xl cursor-pointer p-2 flex justify-between flex-col items-center shadow-sm hover:shadow-md border border-border hover:border-primary transition-all"
                   >
-                    <img src={product.img} className="w-10 h-10 mb-2" />
+                    <img src={product?.img ? product?.img : product?.category?.img} className="w-10 h-10 mb-2" />
                     <h3 className="text-sm font-bold text-primarytext text-center">{product.name}</h3>
                     <p className="text-error flex text-sm font-bold mt-1">
                       {removeThreeZeros(product.price).toLocaleString("fa-IR")}
