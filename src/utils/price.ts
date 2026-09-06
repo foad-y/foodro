@@ -59,7 +59,8 @@ export const tomanToRial = (
 export const removeThreeZeros = (
   value: number | string
 ): number => {
-  return Math.floor(Number(value || 0) / 1000);
+  const num = Number(value || 0);
+  return Math.round((num / 1000) * 10) / 10;
 };
 
 export const formatRial = (value: number | string): string => {

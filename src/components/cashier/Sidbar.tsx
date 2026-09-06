@@ -11,6 +11,7 @@ import {
   User2,
   Utensils,
   X,
+  PenSquare,
 } from "lucide-react";
 import React, { useRef, useState } from "react";
 import { OrderType, usePosStore } from "../../store/useProduct";
@@ -36,6 +37,7 @@ const Sidebar: React.FC<PropsType> = ({ sidebarOpen, closeSidebar }) => {
   const activeOrder = usePosStore((s) => s.getActiveOrder());
   const changeOrderType = usePosStore((s) => s.changeOrderType);
   const openOrder = usePosStore((s) => s.openOrder);
+  const reopenOrder = usePosStore((s) => s.reopenOrder);
   const setOrderStatus = usePosStore((s) => s.setOrderStatus);
   const startOrder = usePosStore((s) => s.startOrder);
   const deleteOrder = usePosStore((s) => s.deleteOrder);
@@ -83,7 +85,7 @@ const Sidebar: React.FC<PropsType> = ({ sidebarOpen, closeSidebar }) => {
   const filteredOrders = getFilteredOrders();
 
   const handelStartOrder = (typeOrder: OrderType) => {
-    if (activeOrder?.step === "beginning") {
+    if (activeOrder?.step === "beginning" || activeOrder?.cart.length === 0) {
       changeOrderType(typeOrder);
     } else {
       startOrder(typeOrder);
@@ -91,13 +93,20 @@ const Sidebar: React.FC<PropsType> = ({ sidebarOpen, closeSidebar }) => {
   };
 
   const handelPendingOrder = (orderId: string) => {
-    if (activeOrder?.status === 'beginning') {
+    if (activeOrder?.cart.length !== 0) {
       setOrderStatus("pending");
       openOrder(orderId);
     } else {
       openOrder(orderId);
     }
   };
+
+  /* ویرایش سفارش تکمیل شده (قبل از تحویل) */
+  const handelEditOrder = (orderId: string) => {
+    reopenOrder(orderId);
+    closeSidebar();
+  };
+
 
   return (
     <div
@@ -114,11 +123,10 @@ const Sidebar: React.FC<PropsType> = ({ sidebarOpen, closeSidebar }) => {
       <div className="grid grid-rows-1 grid-cols-3 px-3 pt-3 pb-2 gap-2">
         <div
           onClick={() => { handelStartOrder("hall"); }}
-          className={`rounded-xl p-2.5 border-2 transition-all cursor-pointer group ${
-            activeOrderType === "hall"
-              ? "bg-primary border-primary shadow-md shadow-primary/20"
-              : "bg-white border-border hover:border-primary/40 hover:bg-primary/5"
-          }`}
+          className={`rounded-xl p-2.5 border-2 transition-all cursor-pointer group ${activeOrderType === "hall"
+            ? "bg-primary border-primary shadow-md shadow-primary/20"
+            : "bg-white border-border hover:border-primary/40 hover:bg-primary/5"
+            }`}
         >
           <div className={`flex flex-col items-center justify-center gap-1.5 ${activeOrderType === "hall" ? "text-white" : "text-secondarytext"} group-hover:text-primary transition-colors`}>
             <div className="flex flex-col xl:flex-row items-center gap-1.5">
@@ -132,11 +140,10 @@ const Sidebar: React.FC<PropsType> = ({ sidebarOpen, closeSidebar }) => {
         </div>
         <div
           onClick={() => { handelStartOrder("takeaway"); }}
-          className={`rounded-xl p-2.5 border-2 transition-all cursor-pointer group ${
-            activeOrderType === "takeaway"
-              ? "bg-primary border-primary shadow-md shadow-primary/20"
-              : "bg-white border-border hover:border-primary/40 hover:bg-primary/5"
-          }`}
+          className={`rounded-xl p-2.5 border-2 transition-all cursor-pointer group ${activeOrderType === "takeaway"
+            ? "bg-primary border-primary shadow-md shadow-primary/20"
+            : "bg-white border-border hover:border-primary/40 hover:bg-primary/5"
+            }`}
         >
           <div className={`flex flex-col items-center justify-center gap-1.5 ${activeOrderType === "takeaway" ? "text-white" : "text-secondarytext"} group-hover:text-primary transition-colors`}>
             <div className="flex flex-col xl:flex-row items-center gap-1.5">
@@ -150,11 +157,10 @@ const Sidebar: React.FC<PropsType> = ({ sidebarOpen, closeSidebar }) => {
         </div>
         <div
           onClick={() => { handelStartOrder("delivery"); }}
-          className={`rounded-xl p-2.5 border-2 transition-all cursor-pointer group ${
-            activeOrderType === "delivery"
-              ? "bg-primary border-primary shadow-md shadow-primary/20"
-              : "bg-white border-border hover:border-primary/40 hover:bg-primary/5"
-          }`}
+          className={`rounded-xl p-2.5 border-2 transition-all cursor-pointer group ${activeOrderType === "delivery"
+            ? "bg-primary border-primary shadow-md shadow-primary/20"
+            : "bg-white border-border hover:border-primary/40 hover:bg-primary/5"
+            }`}
         >
           <div className={`flex flex-col items-center justify-center gap-1.5 ${activeOrderType === "delivery" ? "text-white" : "text-secondarytext"} group-hover:text-primary transition-colors`}>
             <div className="flex flex-col xl:flex-row items-center gap-1.5">
@@ -173,48 +179,45 @@ const Sidebar: React.FC<PropsType> = ({ sidebarOpen, closeSidebar }) => {
         <div className="flex justify-between px-1.5 py-1.5 rounded-xl bg-tertiary border border-border">
           <div
             onClick={() => setTabOrder("pending")}
-            className={`relative flex flex-1 items-center justify-center flex-col lg:flex-row xl:gap-2 gap-1 transition-all ${
-              tabOrder === "pending"
-                ? "bg-white shadow-sm border border-border text-primarytext"
-                : "bg-transparent border border-transparent text-secondarytext hover:text-primarytext"
-            } px-2 py-1.5 rounded-lg hover:cursor-pointer text-sm font-bold`}
+            className={`relative flex flex-1 items-center justify-center flex-col lg:flex-row xl:gap-2 gap-1 transition-all ${tabOrder === "pending"
+              ? "bg-white shadow-sm border border-border text-primarytext"
+              : "bg-transparent border border-transparent text-secondarytext hover:text-primarytext"
+              } px-2 py-1.5 rounded-lg hover:cursor-pointer text-sm font-bold`}
           >
             <Loader className="w-4 h-4" />
             <div className="hidden lg:flex">در انتظار</div>
             {orders.filter((o) => o.status === "pending").length !== 0 && (
-              <div className="absolute rounded-full w-5 h-5 bg-warning text-white -top-2.5 -right-2 shadow-sm flex items-center justify-center border-2 border-white">
+              <div className="absolute rounded-full w-5 h-5 z-10 bg-warning text-white -top-2.5 -left-2 shadow-sm flex items-center justify-center border-2 border-white">
                 <span className="text-[10px]">{orders.filter((o) => o.status === "pending").length}</span>
               </div>
             )}
           </div>
           <div
             onClick={() => setTabOrder("hall")}
-            className={`relative flex flex-1 items-center justify-center flex-col lg:flex-row xl:gap-2 gap-1 transition-all ${
-              tabOrder === "hall"
-                ? "bg-white shadow-sm border border-border text-primarytext"
-                : "bg-transparent border border-transparent text-secondarytext hover:text-primarytext"
-            } px-2 py-1.5 rounded-lg hover:cursor-pointer text-sm font-bold`}
+            className={`relative flex flex-1 items-center justify-center flex-col lg:flex-row xl:gap-2 gap-1 transition-all ${tabOrder === "hall"
+              ? "bg-white shadow-sm border border-border text-primarytext"
+              : "bg-transparent border border-transparent text-secondarytext hover:text-primarytext"
+              } px-2 py-1.5 rounded-lg hover:cursor-pointer text-sm font-bold`}
           >
             <Hamburger className="w-4 h-4" />
-            <div className="hidden lg:flex">سالن</div>
+            <div className="hidden lg:flex">سالن و بیرون بر</div>
             {orders.filter((o) => o.status === "completed" && (o.type === "hall" || o.type === "takeaway")).length !== 0 && (
-              <div className="absolute rounded-full w-5 h-5 bg-success text-white -top-2.5 -right-2 shadow-sm flex items-center justify-center border-2 border-white">
+              <div className="absolute rounded-full w-5 h-5 z-10 bg-success text-white -top-2.5 -left-2 shadow-sm flex items-center justify-center border-2 border-white">
                 <span className="text-[10px]">{orders.filter((o) => o.status === "completed" && (o.type === "hall" || o.type === "takeaway")).length}</span>
               </div>
             )}
           </div>
           <div
             onClick={() => setTabOrder("takeaway")}
-            className={`relative flex flex-1 items-center justify-center flex-col lg:flex-row xl:gap-2 gap-1 transition-all ${
-              tabOrder === "takeaway"
-                ? "bg-white shadow-sm border border-border text-primarytext"
-                : "bg-transparent border border-transparent text-secondarytext hover:text-primarytext"
-            } px-2 py-1.5 rounded-lg hover:cursor-pointer text-sm font-bold`}
+            className={`relative flex flex-1 items-center justify-center flex-col lg:flex-row xl:gap-2 gap-1 transition-all ${tabOrder === "takeaway"
+              ? "bg-white shadow-sm border border-border text-primarytext"
+              : "bg-transparent border border-transparent text-secondarytext hover:text-primarytext"
+              } px-2 py-1.5 rounded-lg hover:cursor-pointer text-sm font-bold`}
           >
             <Motorbike className="w-4 h-4" />
-            <div className="hidden lg:flex">بیرون بر</div>
+            <div className="hidden lg:flex">پیک موتوری</div>
             {orders.filter((o) => o.status === "completed" && o.type === "delivery").length !== 0 && (
-              <div className="absolute rounded-full w-5 h-5 bg-success text-white -top-2.5 -right-2 shadow-sm flex items-center justify-center border-2 border-white">
+              <div className="absolute rounded-full w-5 h-5 z-10 bg-success text-white -top-2.5 -left-2 shadow-sm flex items-center justify-center border-2 border-white">
                 <span className="text-[10px]">{orders.filter((o) => o.status === "completed" && o.type === "delivery").length}</span>
               </div>
             )}
@@ -236,7 +239,7 @@ const Sidebar: React.FC<PropsType> = ({ sidebarOpen, closeSidebar }) => {
             {filteredOrders.map((order, index) => (
               <div key={index} className="bg-white border-2 border-border rounded-xl p-3 relative hover:border-primary/30 transition-colors shadow-sm">
                 <div className="w-full text-xs text-right transition-colors">
-                  
+
                   {/* هدر کارت سفارش */}
                   <div className="flex justify-between items-center mb-3">
                     <span className="font-extrabold text-sm text-secondary bg-tertiary px-2.5 py-1 rounded-md border border-border">
@@ -244,11 +247,10 @@ const Sidebar: React.FC<PropsType> = ({ sidebarOpen, closeSidebar }) => {
                     </span>
                     <div className="flex items-center justify-center gap-2">
                       <div
-                        className={`flex items-center justify-center gap-1.5 py-1 px-2.5 rounded-md border text-xs font-bold ${
-                          order.status === "completed"
-                            ? "text-success bg-success/10 border-success/20"
-                            : "bg-warning/10 text-warning border-warning/20"
-                        }`}
+                        className={`flex items-center justify-center gap-1.5 py-1 px-2.5 rounded-md border text-xs font-bold ${order.status === "completed"
+                          ? "text-success bg-success/10 border-success/20"
+                          : "bg-warning/10 text-warning border-warning/20"
+                          }`}
                       >
                         {order.status === "completed" ? (
                           <CircleCheck className="w-3.5 h-3.5" />
@@ -259,11 +261,11 @@ const Sidebar: React.FC<PropsType> = ({ sidebarOpen, closeSidebar }) => {
                           {order.status === "completed" ? "تکمیل شده" : "در انتظار"}
                         </span>
                       </div>
-                      {order.status === 'pending' && (
-                        <button onClick={() => deleteOrder(order.id)} className="text-error bg-error/10 border border-error/20 p-1.5 rounded-md hover:cursor-pointer hover:bg-error hover:text-white transition-all">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
+                      {/* {order.status === 'pending' && ( */}
+                      <button onClick={() => deleteOrder(order.id)} className="text-error bg-error/10 border border-error/20 p-1.5 rounded-md hover:cursor-pointer hover:bg-error hover:text-white transition-all">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                      {/* )} */}
                     </div>
                   </div>
 
@@ -309,7 +311,7 @@ const Sidebar: React.FC<PropsType> = ({ sidebarOpen, closeSidebar }) => {
                   </div>
 
                   <div className="border-t border-dashed border-border w-full my-3"></div>
-                  
+
                   {/* قیمت نهایی */}
                   <div className="flex justify-between items-center mb-3">
                     <div className="text-secondarytext font-bold text-sm">مبلغ پرداختی:</div>
@@ -323,18 +325,38 @@ const Sidebar: React.FC<PropsType> = ({ sidebarOpen, closeSidebar }) => {
                   </div>
 
                   {/* دکمه اکشن */}
-                  <div className="w-full flex">
+                  <div className="w-full flex gap-2">
+                    {order.status === "completed" &&
+
+                      <>
+                        <button
+                          onClick={() => handelEditOrder(order.id)}
+                          title="ویرایش سفارش"
+                          className="flex justify-center w-full items-center gap-2 font-bold rounded-lg cursor-pointer py-2.5 px-3 transition-all bg-warning/10 text-warning border border-warning/20 hover:bg-warning hover:text-white"
+                        >
+                          <PenSquare className="w-4 h-4" />
+                          ویرایش
+                        </button>
+                        {/* <button
+                            onClick={() => setDeleteConfirmId(order.id)}
+                            title="حذف سفارش"
+                            className="flex justify-center items-center gap-2 font-bold rounded-lg cursor-pointer py-2.5 px-3 transition-all bg-error/10 text-error border border-error/20 hover:bg-error hover:text-white"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            حذف
+                          </button> */}
+                      </>
+                    }
                     <button
                       onClick={() =>
                         order.status === "completed"
                           ? deliveredOrder(order.id)
                           : handelPendingOrder(order.id)
                       }
-                      className={`flex justify-center items-center gap-2 font-bold rounded-lg cursor-pointer py-2.5 transition-all w-full hover:-translate-y-0.5 hover:shadow-md ${
-                        order.status === "completed" 
-                          ? "bg-primary text-white shadow-primary/20" 
-                          : "bg-warning text-white shadow-warning/20"
-                      }`}
+                      className={`flex justify-center items-center gap-2 font-bold rounded-lg cursor-pointer py-2.5 transition-all w-full hover:-translate-y-0.5 hover:shadow-md ${order.status === "completed"
+                        ? "bg-primary text-white shadow-primary/20"
+                        : "bg-warning text-white shadow-warning/20"
+                        }`}
                     >
                       <ScrollText className="w-4 h-4" />
                       {order.status === "completed" ? "تحویل به مشتری" : "مشاهده جزییات"}

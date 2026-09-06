@@ -6,13 +6,23 @@ import { Check, Hamburger, HandPlatter, Motorbike, PrinterX } from "lucide-react
 import { toast } from "react-toastify";
 
 const orderSchema = yup.object({
-  name: yup.string().trim().required("اسم مشتری الزامی است"),
+  // name: yup.string().trim().required("اسم مشتری الزامی است"),
 
-  phone: yup
-    .string()
-    .trim()
-    .required("شماره همراه مشتری الزامی است"),
+  // phone: yup
+  //   .string()
+  //   .trim()
+  //   .required("شماره همراه مشتری الزامی است"),
 
+  // name: yup.string().when("$isDelivery", {
+  //   is: true,
+  //   then: (schema) => schema.required("اسم مشتری الزامی است"),
+  //   otherwise: (schema) => schema.notRequired(),
+  // }),
+  phone: yup.string().when("$isDelivery", {
+    is: true,
+    then: (schema) => schema.required("شماره همراه مشتری در ارسال با پیک الزامی می باشد."),
+    otherwise: (schema) => schema.notRequired(),
+  }),
   address: yup.string().when("$isDelivery", {
     is: true,
     then: (schema) => schema.required("آدرس الزامی است"),

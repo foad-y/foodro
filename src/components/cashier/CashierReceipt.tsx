@@ -3,6 +3,7 @@ import config from "../../../site.config.json";
 import type { Order, CartItem, CartIngredient } from "../../store/useProduct";
 import { toast } from "react-toastify";
 import { formatRial, tomanToRial } from "../../utils/price";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const storeName = (config)?.marketName || "کلیز برگر";
 
@@ -19,7 +20,9 @@ const storeName = (config)?.marketName || "کلیز برگر";
 
 export function getCashierReceiptHTML(order: Order): string {
   const now = new Date().toLocaleString("fa-IR");
-  console.log(order, 'order');
+  const cashierName = useAuthStore.getState().user?.name || "ناشناس";
+
+  // console.log(order, 'order');
 
   // const formatPrice = (n: number) =>
   //   new Intl.NumberFormat("fa-IR").format(n) + " تومان";
@@ -51,7 +54,7 @@ export function getCashierReceiptHTML(order: Order): string {
             .join("")
           : "";
         return `<tr>
-          <td>${item.product.name}${ingredientDescs ? `<br/>${ingredientDescs}` : ""}</td>
+          <td style="text-align: right" >${item.product.name}${ingredientDescs ? `<br/>${ingredientDescs}` : ""}</td>
           <td style="text-align: center;">${new Intl.NumberFormat("fa-IR").format(item.quantity)}</td>
           <td style="text-align: left;">${formatRial(tomanToRial(item.product.price * item.quantity))} ریال</td>
         </tr>`;
@@ -173,10 +176,14 @@ export function getCashierReceiptHTML(order: Order): string {
     <span>تاریخ:</span>
     <span>${now}</span>
   </div>
+  <div class="info-row">
+    <span>صندوقدار:</span>
+    <span>${cashierName}</span>
+  </div>
   ${order.customer?.name ? `<div class="info-row"><span>مشتری:</span><span class="bold">${order.customer.name}</span></div>` : ""}
-  ${order.customer?.phone ? `<div class="info-row"><span>تماس:</span><span dir="ltr" class="bold">${order.customer.phone}</span></div>` : ""}
+  ${order?.type === 'hall' ? "" : order.customer?.phone ? `<div class="info-row"><span>تماس:</span><span dir="ltr" class="bold">${order.customer.phone}</span></div>` : ""}
 
-  ${order.type === 'delivery' ? `<div class="info-row"><span>آدرس:</span><span dir="ltr" class="bold">${order.customer?.address}</span></div>` : ""}
+  ${order?.type === 'delivery' ? `<div class="info-row"><span>آدرس:</span><span dir="ltr" class="bold">${order.customer?.address}</span></div>` : ""}
 
   <div class="thick-divider"></div>
 

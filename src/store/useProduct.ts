@@ -78,6 +78,8 @@ export interface Order {
   orderNumber: number;
   order_number: number;
   deliveryCost?: number
+  /** آیا سفارش قبلاً به سرور ارسال شده است؟ (برای تشخیص PUT به جای POST هنگام ویرایش) */
+  sentToServer?: boolean;
   discount?: {
     code: string;
     type: "percent" | "fixed";
@@ -94,6 +96,7 @@ interface PosState {
   orders: Order[];
   cachedOrders: string[];
   cachedDeleveryOrders: string[];
+  cachedDeletedOrders: string[];
   activeOrderId: string | null;
   products: Product[];
   categories: Category[];
@@ -144,6 +147,8 @@ interface PosState {
   setOrderDiscount: (discount: { code: string; type: "percent" | "fixed"; value: number; amount: number } | null) => void;
 
   deleteOrder: (orderId: string) => void
+  reopenOrder: (orderId: string) => void;
+  deleteOrderFromServer: (orderId: string) => Promise<void>;
   completeOrder: (order: Order) => void;
   completeOrderNoPrint: (order: Order) => void;
   deliveredOrder: (orderId: string) => void;
@@ -165,6 +170,7 @@ export const usePosStore = create<PosState>()(
       orders: [],
       cachedOrders: [],
       cachedDeleveryOrders: [],
+      cachedDeletedOrders: [],
       activeOrderId: null,
       products: [],
       categories: [],
@@ -224,6 +230,17 @@ export const usePosStore = create<PosState>()(
 
       /* ---------- open pending order ---------- */
       openOrder: (id) => set({ activeOrderId: id }),
+
+      /* ---------- reopen a completed order for editing (before delivery) ---------- */
+      reopenOrder: (orderId) => {
+        set((state) => ({
+          activeOrderId: orderId,
+          showIngredients: null,
+          orders: state.orders.map((o) =>
+            o.id === orderId ? { ...o, step: "selecting" } : o,
+          ),
+        }));
+      },
 
       /* ---------- cart actions ---------- */
       addToCart: (product, customIngredients?: CartIngredient) => {
@@ -681,6 +698,7 @@ export const usePosStore = create<PosState>()(
           activeOrderId: newActiveId,
           cachedOrders: state.cachedOrders.filter((id) => id !== orderId),
           cachedDeleveryOrders: state.cachedDeleveryOrders.filter((id) => id !== orderId),
+          cachedDeletedOrders: state.cachedDeletedOrders.filter((id) => id !== orderId),
         }));
 
         const cached = localStorage.getItem("orders_cache");
@@ -689,6 +707,20 @@ export const usePosStore = create<PosState>()(
           const filtered = cachedOrdersList.filter((o) => o.id !== orderId);
           localStorage.setItem("orders_cache", JSON.stringify(filtered));
         }
+      },
+
+      /* -------------  delete order from local + server (before delivery) ------------*/
+      deleteOrderFromServer: async (orderId) => {
+        const { deleteOrder, cachedDeletedOrders } = get();
+        deleteOrder(orderId);
+
+        const ids = Array.from(new Set([orderId, ...cachedDeletedOrders]));
+        const results = await Promise.allSettled(
+          ids.map((id) => axiosInstance.delete(`order/${id}`)),
+        );
+        const failed = ids.filter((_, i) => results[i].status === "rejected");
+        set({ cachedDeletedOrders: failed });
+        if (failed.length) throw new Error("delete failed");
       },
 
       /* ---------- complete order ---------- */
@@ -715,10 +747,18 @@ export const usePosStore = create<PosState>()(
           deliveryCost: currentOrder?.customer?.deliveryPrice || undefined
         };
 
-        // send to server
-        axiosInstance
-          .post("order", orderData)
+        // اگر سفارش قبلاً به سرور ارسال شده (مثلاً بعد از ویرایش) → آپدیت (PUT)، وگرنه ثبت جدید (POST)
+        const request = currentOrder.sentToServer
+          ? axiosInstance.put(`order/${currentOrder.id}`, orderData)
+          : axiosInstance.post("order", orderData);
+
+        request
           .then(() => {
+            set((state) => ({
+              orders: state.orders.map((o) =>
+                o.id === currentOrder.id ? { ...o, sentToServer: true } : o,
+              ),
+            }));
             if (cachedOrders.length)
               axiosInstance
                 .post("order/batch", {
@@ -757,10 +797,18 @@ export const usePosStore = create<PosState>()(
           deliveryCost: currentOrder?.customer?.deliveryPrice || undefined
         };
 
-        // send to server
-        axiosInstance
-          .post("order", orderData)
+        // اگر سفارش قبلاً به سرور ارسال شده (مثلاً بعد از ویرایش) → آپدیت (PUT)، وگرنه ثبت جدید (POST)
+        const request = currentOrder.sentToServer
+          ? axiosInstance.put(`order/${currentOrder.id}`, orderData)
+          : axiosInstance.post("order", orderData);
+
+        request
           .then(() => {
+            set((state) => ({
+              orders: state.orders.map((o) =>
+                o.id === currentOrder.id ? { ...o, sentToServer: true } : o,
+              ),
+            }));
             if (cachedOrders.length)
               axiosInstance
                 .post("order/batch", {

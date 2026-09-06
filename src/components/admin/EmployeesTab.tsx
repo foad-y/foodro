@@ -219,7 +219,6 @@ export default function EmployeesTab() {
               options={[
                 { value: "male", label: "مرد" },
                 { value: "female", label: "زن" },
-                { value: "other", label: "سایر" },
               ]}
               onChange={(val) => setFormData({ ...formData, gender: val })}
             />
@@ -365,8 +364,8 @@ export default function EmployeesTab() {
                     <td className="px-6 py-4 text-sm">
                       <span
                         className={`px-3 py-1.5 rounded-full text-xs font-bold border ${employee.role === "admin"
-                            ? "bg-secondary/10 text-secondary border-secondary/20"
-                            : "bg-primary/10 text-primary border-primary/20"
+                          ? "bg-secondary/10 text-secondary border-secondary/20"
+                          : "bg-primary/10 text-primary border-primary/20"
                           }`}
                       >
                         {employee.role === "admin" ? "👑 مدیر" : "👤 صندوقدار"}

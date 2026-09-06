@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { CartIngredient, Product, usePosStore } from "../../store/useProduct";
-import { Trash2, Utensils } from "lucide-react";
+import { ArrowRight, Trash2, Utensils } from "lucide-react";
 import { Pattern } from "../../hooks/usePattern";
 import { removeThreeZeros } from "../../utils/price";
 
@@ -52,108 +52,121 @@ const ProductCatalog = () => {
       {activeOrder?.step === "selecting" &&
         activeOrder.cart.length > 0 &&
         showIngredients ? (
-        <div className="flex flex-col justify-between h-full w-full">
-          <div className=" w-full">
-            <div className="flex flex-wrap gap-2 mb-4">
-              {showIngredients?.patterns?.map((item: Pattern, i: number) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    if (
-                      showIngredients.disabledCount ===
-                      Number(activeOrder?.cart.map((p) => p.quantity))
-                    )
-                      return;
-                    setTempIngredientSelected(item.name);
-                    updateIngredientOrder(item.name);
-                    setAllNumberDisabled(false);
-                  }}
-                  className={`cursor-pointer hover:bg-primary hover:text-white w-fit p-2 rounded-xl flex items-center transition-colors
-                    ${tempIngredientSelected === item.name
-                      ? "bg-primary text-white"
-                      : "bg-white text-primarytext border border-border"
-                    } 
-                        `}
-                >
-                  <div className="px-4 rounded-full">
-                    <h3 className="text-sm flex flex-nowrap">{item.name}</h3>
-                  </div>
-                </button>
-              ))}
-            </div>
-            {activeOrderId &&
-              (getIngredientsOnProduct(
-                activeOrderId,
-                showIngredients?.productId,
-              ) as CartIngredient[]).length !== 0 && (
-                <div className="flex flex-col gap-2 bg-white border border-border rounded-xl p-2 w-full">
-                  {(getIngredientsOnProduct(
-                    activeOrderId,
-                    showIngredients?.productId,
-                  ) as CartIngredient[]).map((ing: CartIngredient, idx: number) => (
-                    <div key={idx} className="flex justify-between item-center w-full">
-                      <div
-                        className="flex gap-2 text-primarytext"
-                        style={{ alignItems: "center" }}
-                      >
-                        <Utensils className="w-3 h-3 text-primarytext" />
-                        {ing.desc}
-                      </div>
-                      <div className="flex gap-2 text-primarytext">
-                        <h3>({ing.count})</h3>
-                        <button>
-                          <Trash2
-                            onClick={() => updateIngredientOrder(ing.desc ?? '', 0)}
-                            className="w-4 h-4 cursor-pointer text-error hover:scale-110 transition-transform"
-                          />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-          </div>
-          <div className="w-full mb-4 bg-white p-2 rounded-xl max-h-60 overflow-y-auto">
-            <ul className="grid gap-2 grid-cols-[repeat(auto-fill,minmax(70px,1fr))]">
-              {Array.from({ length: activeCartItem?.quantity ?? 0 }, (_, i) => {
-                const num = i + 1;
-                const isSelected = false;
-                if (
-                  (activeCartItem?.quantity ?? 0) -
-                  (showIngredients?.disabledCount ?? 0) ===
-                  0 && !allNumberDisabled
-                )
-                  setAllNumberDisabled(true);
-                return (
+        <>
+          <button
+            onClick={() => {
+              toggleIngredient();
+              setTempIngredientSelected(null);
+              setAllNumberDisabled(false);
+            }}
+            className="self-start mb-4 px-4 py-2 bg-primary text-white hover:bg-primary/90 rounded-lg text-sm font-medium transition-colors cursor-pointer flex items-center gap-2"
+          >
+            <ArrowRight size={16} />
+            بازگشت به محصولات
+          </button>
+          <div className="flex flex-col justify-between h-full w-full">
+            <div className=" w-full">
+              <div className="flex flex-wrap gap-2 mb-4">
+                {showIngredients?.patterns?.map((item: Pattern, i: number) => (
                   <button
                     key={i}
                     onClick={() => {
-                      if (!tempIngredientSelected) return;
-                      updateIngredientOrder(tempIngredientSelected, num);
-                      setTempIngredientSelected(null);
+                      if (
+                        showIngredients.disabledCount ===
+                        Number(activeOrder?.cart.map((p) => p.quantity))
+                      )
+                        return;
+                      setTempIngredientSelected(item.name);
+                      updateIngredientOrder(item.name);
+                      setAllNumberDisabled(false);
                     }}
-                    disabled={
-                      allNumberDisabled ||
-                      (showIngredients?.disabledCount
-                        ? (activeCartItem?.quantity ?? 0) -
-                        showIngredients.disabledCount <
-                        i
-                        : false)
-                    }
-                    className={`disabled:text-tertiarytext min-w-12 h-10 rounded-lg font-bold text-sm transition-all
-                                                  ${isSelected
-                        ? "bg-success text-white shadow-md scale-105"
-                        : "bg-tertiary text-secondarytext hover:bg-border"
-                      }
-                                                  `}
+                    className={`cursor-pointer hover:bg-primary hover:text-white w-fit p-2 rounded-xl flex items-center transition-colors
+                    ${tempIngredientSelected === item.name
+                        ? "bg-primary text-white"
+                        : "bg-white text-primarytext border border-border"
+                      } 
+                        `}
                   >
-                    {num}
+                    <div className="px-4 rounded-full">
+                      <h3 className="text-sm flex flex-nowrap">{item.name}</h3>
+                    </div>
                   </button>
-                );
-              })}
-            </ul>
+                ))}
+              </div>
+              {activeOrderId &&
+                (getIngredientsOnProduct(
+                  activeOrderId,
+                  showIngredients?.productId,
+                ) as CartIngredient[]).length !== 0 && (
+                  <div className="flex flex-col gap-2 bg-white border border-border rounded-xl p-2 w-full">
+                    {(getIngredientsOnProduct(
+                      activeOrderId,
+                      showIngredients?.productId,
+                    ) as CartIngredient[]).map((ing: CartIngredient, idx: number) => (
+                      <div key={idx} className="flex justify-between item-center w-full">
+                        <div
+                          className="flex gap-2 text-primarytext"
+                          style={{ alignItems: "center" }}
+                        >
+                          <Utensils className="w-3 h-3 text-primarytext" />
+                          {ing.desc}
+                        </div>
+                        <div className="flex gap-2 text-primarytext">
+                          <h3>({ing.count})</h3>
+                          <button>
+                            <Trash2
+                              onClick={() => updateIngredientOrder(ing.desc ?? '', 0)}
+                              className="w-4 h-4 cursor-pointer text-error hover:scale-110 transition-transform"
+                            />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+            </div>
+            <div className="w-full mb-4 bg-white p-2 rounded-xl max-h-60 overflow-y-auto">
+              <ul className="grid gap-2 grid-cols-[repeat(auto-fill,minmax(70px,1fr))]">
+                {Array.from({ length: activeCartItem?.quantity ?? 0 }, (_, i) => {
+                  const num = i + 1;
+                  const isSelected = false;
+                  if (
+                    (activeCartItem?.quantity ?? 0) -
+                    (showIngredients?.disabledCount ?? 0) ===
+                    0 && !allNumberDisabled
+                  )
+                    setAllNumberDisabled(true);
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        if (!tempIngredientSelected) return;
+                        updateIngredientOrder(tempIngredientSelected, num);
+                        setTempIngredientSelected(null);
+                      }}
+                      disabled={
+                        allNumberDisabled ||
+                        (showIngredients?.disabledCount
+                          ? (activeCartItem?.quantity ?? 0) -
+                          showIngredients.disabledCount <
+                          i
+                          : false)
+                      }
+                      className={`disabled:text-tertiarytext min-w-12 h-10 rounded-lg font-bold text-sm transition-all
+                                                  ${isSelected
+                          ? "bg-success text-white shadow-md scale-105"
+                          : "bg-tertiary text-secondarytext hover:bg-border"
+                        }
+                                                  `}
+                    >
+                      {num}
+                    </button>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
-        </div>
+        </>
       ) : (
         <>
           {/* Category Filter */}

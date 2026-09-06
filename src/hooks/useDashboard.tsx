@@ -48,15 +48,15 @@ export interface DashboardStats {
 interface UseDashboardParams {
   from?: number | null;
   to?: number | null;
-  types? : 'delivery' | '' | 'hall' | 'takeaway' | null | undefined 
+  types?: Array<'hall' | 'takeaway' | 'delivery'> | null | undefined;
 }
 
-export const useDashboard = ({ from, to , types }: UseDashboardParams = {}) => {
+export const useDashboard = ({ from, to, types }: UseDashboardParams = {}) => {
   let query = '/dashboard/stats';
   const params: string[] = [];
   if (from) params.push(`from=${from}`);
   if (to) params.push(`to=${to}`);
-  if (types) params.push(`types=${types}`)
+  if (types && types.length > 0) params.push(`types=${types.join(',')}`);
   if (params.length > 0) query += `?${params.join('&')}`;
 
   const { data, error, isLoading, mutate } = useSWR<DashboardStats>(query, fetcher);

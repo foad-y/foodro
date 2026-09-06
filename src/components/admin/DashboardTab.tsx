@@ -21,7 +21,25 @@ const formatDateTime = (value: number | null) => {
 
 export default function DashboardTab() {
   const [activeFilter, setActiveFilter] = useState("امروز");
-  const [types, setTypes] = useState<"delivery" | "hall" | "takeaway" | ''>('')
+  type OrderTypeFilter = 'hall' | 'takeaway' | 'delivery';
+  const [types, setTypes] = useState<Array<OrderTypeFilter>>([]);
+
+  const ALL_TYPES: OrderTypeFilter[] = ['hall', 'takeaway', 'delivery'];
+
+  const toggleType = (value: '' | OrderTypeFilter) => {
+    if (value === '') {
+      // «همه» → خالی کردن انتخاب‌ها
+      setTypes([]);
+      return;
+    }
+    setTypes((prev) => {
+      // اگر همه انتخاب شده بودند، فقط همان یکی بماند
+      const base = prev.length === ALL_TYPES.length ? [] : prev;
+      return base.includes(value as OrderTypeFilter)
+        ? base.filter((t) => t !== value)
+        : [...base, value as OrderTypeFilter];
+    });
+  };
   const [from, setFrom] = useState(() => {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
@@ -188,20 +206,26 @@ export default function DashboardTab() {
           </div>
 
           <div className='flex flex-wrap gap-2 mb-5'>
-            {buttonTypes.map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                onClick={() => setTypes(item.value as any)}
-                className={`px-5 py-2.5 rounded-xl cursor-pointer transition-all text-sm font-bold border ${
-                  types === item.value 
-                    ? 'bg-secondary text-white border-transparent shadow-md' 
-                    : 'bg-tertiary text-secondarytext border-border hover:border-secondary hover:text-secondary'
-                }`}
-              >
-                {item.lable}
-              </button>
-            ))}
+            {buttonTypes.map((item) => {
+              const isActive =
+                item.value === ''
+                  ? types.length === 0
+                  : types.includes(item.value as OrderTypeFilter);
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => toggleType(item.value as '' | OrderTypeFilter)}
+                  className={`px-5 py-2.5 rounded-xl cursor-pointer transition-all text-sm font-bold border ${
+                    isActive
+                      ? 'bg-secondary text-white border-transparent shadow-md'
+                      : 'bg-tertiary text-secondarytext border-border hover:border-secondary hover:text-secondary'
+                  }`}
+                >
+                  {item.lable}
+                </button>
+              );
+            })}
           </div>
         </div>
 
