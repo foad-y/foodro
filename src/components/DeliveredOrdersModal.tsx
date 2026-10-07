@@ -18,6 +18,20 @@ interface PropsType {
   close: () => void;
 }
 
+// نوع سفارش برای نمایش در تاریخچه
+const ORDER_TYPE_LABEL: Record<string, string> = {
+  delivery: "پیک موتوری",
+  hall: "سالن",
+  dine_in: "سالن",
+  takeaway: "بیرون‌بر",
+};
+
+const OrderTypeBadge: React.FC<{ type: string }> = ({ type }) => (
+  <span className="inline-flex w-fit items-center bg-tertiary text-secondarytext border border-border text-xs font-bold px-2 py-0.5 rounded-full">
+    {ORDER_TYPE_LABEL[type] ?? type}
+  </span>
+);
+
 const DeliveredOrdersModal: React.FC<PropsType> = ({ close }) => {
   const orders = usePosStore((s) => s.orders);
   const deliveredOrders = orders.filter((o) => o.status === "delivered");
@@ -92,6 +106,7 @@ const DeliveredOrdersModal: React.FC<PropsType> = ({ close }) => {
                           <span className="font-bold text-sm text-primarytext">
                             شماره سفارش :{order.orderNumber}
                           </span>
+                          <OrderTypeBadge type={order.type} />
                           {order.customer?.name && (
                             <span className="text-xs text-secondarytext">
                               <User className="w-3 h-3 inline ml-1" />
@@ -155,6 +170,7 @@ const DeliveredOrdersModal: React.FC<PropsType> = ({ close }) => {
                       <h3 className="font-bold text-lg text-primarytext">
                         سفارش #{selectedOrder.orderNumber}
                       </h3>
+                      <OrderTypeBadge type={selectedOrder.type} />
                     </div>
                     <div className="flex items-center gap-4 mt-2 text-sm text-secondarytext">
                       {/* {selectedOrder.customer?.fullName && (

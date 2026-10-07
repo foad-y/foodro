@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Clock3, Users, Printer, RefreshCw } from 'lucide-react';
 import { useDashboard } from '../../hooks/useDashboard';
+import { useCategories } from '../../hooks/useCategory';
 import PrintReceipt from './PrintReceipt';
 import DatePicker from 'react-multi-date-picker';
 import persian from "react-date-object/calendars/persian";
@@ -55,11 +56,17 @@ export default function DashboardTab() {
   const fromTimestamp = from ? new Date(from).getTime() : undefined;
   const toTimestamp = to ? new Date(to).getTime() : undefined;
 
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const { categories } = useCategories();
+
   const { stats, isLoading, refreshDashboard } = useDashboard({
     from: fromTimestamp,
     to: toTimestamp,
-    types: types
+    types: types,
+    category: categoryFilter || undefined,
   });
+
+  const topProducts = stats?.topProducts ?? [];
 
   const periodLabel = useMemo(() => {
     if (stats?.period?.from && stats?.period?.to) {
@@ -419,11 +426,27 @@ export default function DashboardTab() {
             <h3 className="text-xl font-bold text-secondary">پرفروش‌ترین محصولات</h3>
           </div>
 
+          <div className="flex gap-2 flex-wrap mb-4">
+            {[{ _id: '', name: 'همه' }, ...(categories ?? [])].map((c) => (
+              <button
+                key={c._id || 'all'}
+                onClick={() => setCategoryFilter(c._id)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-bold cursor-pointer transition-all border ${
+                  categoryFilter === c._id
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-white border-border text-secondarytext hover:border-primary hover:text-primary'
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+
           {isLoading ? (
             <div className="text-center py-12 text-tertiarytext font-bold">در حال بارگذاری...</div>
-          ) : stats?.topProducts?.length ? (
+          ) : topProducts.length ? (
             <div className="max-h-72 overflow-y-auto space-y-3 pr-2 scrollbar-hide">
-              {stats.topProducts.map((product, index) => (
+              {topProducts.map((product, index) => (
                 <div key={product.productId} className="rounded-2xl border border-border bg-tertiary/30 p-4 hover:bg-tertiary hover:border-primary/30 transition-all flex items-center justify-between group">
                   <div className="flex items-center gap-4">
                     <span className="w-8 h-8 rounded-full bg-white border border-border flex items-center justify-center font-bold text-secondarytext group-hover:text-primary group-hover:border-primary transition-colors">

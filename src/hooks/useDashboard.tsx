@@ -49,14 +49,16 @@ interface UseDashboardParams {
   from?: number | null;
   to?: number | null;
   types?: Array<'hall' | 'takeaway' | 'delivery'> | null | undefined;
+  category?: string; // category id; filters top products
 }
 
-export const useDashboard = ({ from, to, types }: UseDashboardParams = {}) => {
+export const useDashboard = ({ from, to, types, category }: UseDashboardParams = {}) => {
   let query = '/dashboard/stats';
   const params: string[] = [];
   if (from) params.push(`from=${from}`);
   if (to) params.push(`to=${to}`);
   if (types && types.length > 0) params.push(`types=${types.join(',')}`);
+  if (category) params.push(`category=${category}`);
   if (params.length > 0) query += `?${params.join('&')}`;
 
   const { data, error, isLoading, mutate } = useSWR<DashboardStats>(query, fetcher);

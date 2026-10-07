@@ -56,7 +56,8 @@ export function getCashierReceiptHTML(order: Order): string {
         return `<tr>
           <td style="text-align: right" >${item.product.name}${ingredientDescs ? `<br/>${ingredientDescs}` : ""}</td>
           <td style="text-align: center;">${new Intl.NumberFormat("fa-IR").format(item.quantity)}</td>
-          <td style="text-align: left;">${formatRial(tomanToRial(item.product.price * item.quantity))} ریال</td>
+          <td style="text-align: center;">${formatRial(item.product.price)}</td>
+          <td style="text-align: left;">${formatRial(item.product.price * item.quantity)}</td>
         </tr>`;
       }
     )
@@ -192,7 +193,8 @@ export function getCashierReceiptHTML(order: Order): string {
       <tr>
         <th>کالا</th>
         <th>تعداد</th>
-        <th>قیمت</th>
+        <th>فی (تومان)</th>
+        <th>جمع (تومان)</th>
       </tr>
     </thead>
     <tbody>${cartRows}</tbody>

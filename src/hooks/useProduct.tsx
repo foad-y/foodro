@@ -18,6 +18,7 @@ export interface Product {
   img : string
   name: string;
   price: number;
+  order: number;
   category: Category;
   // product_ingredients: Ingredient[];
 }
@@ -38,6 +39,7 @@ interface UseProductsParams {
   page?: number;
   limit?: number;
   search?: string;
+  category?: string;
 }
 
 export const fetcher = async (url: string) => {
@@ -56,8 +58,10 @@ export const useProducts = ({
   page = 1,
   limit = 10,
   search = "",
+  category = "",
 }: UseProductsParams = {}) => {
-  const query = `/product?page=${page}&limit=${limit}&search=${search}`;
+  let query = `/product?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`;
+  if (category) query += `&category=${category}`;
 
   const { data, error, isLoading, mutate } = useSWR<ProductsResponse>(
     query,

@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import PersianClock from "../PersianClock";
 import { useNavigate } from "react-router-dom";
-import { Home, LogOut, Printer, RotateCcw, User2, Settings } from "lucide-react";
+import { Globe, Home, LogOut, Printer, RotateCcw, User2, Settings } from "lucide-react";
 import { useAuthStore } from "../../store/useAuthStore";
 import { toast } from "react-toastify";
 import { usePosStore } from "../../store/useProduct";
 import PrinterSettingsModal from "../PrinterSettingsModal";
+import OnlineOrdersModal from "./OnlineOrdersModal";
+import { useOnlineOrderAlerts, useStoreStatus } from "../../hooks/useOnlineOrders";
 
 interface PropsType {
   SidbarOpen: () => void;
@@ -22,6 +24,10 @@ const Header: React.FC<PropsType> = ({
   const { orders } = usePosStore();
   const navigate = useNavigate();
   const [showPrinterModal, setShowPrinterModal] = useState(false);
+  const [showOnlineOrders, setShowOnlineOrders] = useState(false);
+  // اعلان سفارش جدید آنلاین (صدا + نوتیف) تا وقتی صندوق باز است فعال است
+  const { newCount, error: onlineError } = useOnlineOrderAlerts();
+  const { store } = useStoreStatus();
 
   const handleSignOut = async () => {
     await logout();
@@ -79,6 +85,32 @@ const Header: React.FC<PropsType> = ({
             </button>
 
             <button
+              onClick={() => setShowOnlineOrders(true)}
+              className={`relative flex items-center font-bold whitespace-nowrap text-xs xl:text-sm h-9 gap-2 px-4 py-1 rounded-xl cursor-pointer transition-all ${
+                newCount > 0
+                  ? "bg-success text-white border border-transparent animate-pulse hover:bg-primary hover:animate-none"
+                  : "bg-tertiary text-secondarytext border border-border hover:bg-primary hover:text-white hover:border-transparent"
+              }`}
+              title={onlineError ? "اتصال به سفارش آنلاین برقرار نیست" : "سفارش‌های آنلاین"}
+            >
+              <Globe className="w-4 h-4" />
+              سفارش آنلاین
+              {store && (
+                <span
+                  className={`w-2.5 h-2.5 rounded-full border border-white ${
+                    store.isOpen ? (newCount > 0 ? "bg-white" : "bg-success") : "bg-error"
+                  }`}
+                  title={store.isOpen ? "فروشگاه باز است" : "فروشگاه بسته است"}
+                />
+              )}
+              {newCount > 0 && (
+                <span className="absolute -top-2 -left-2 min-w-5 h-5 px-1 rounded-full bg-error text-white text-[11px] flex items-center justify-center">
+                  {newCount.toLocaleString("fa-IR")}
+                </span>
+              )}
+            </button>
+
+            <button
               onClick={openModalOrderDelivered}
               className="flex items-center font-bold cursor-pointer text-xs xl:text-sm h-9 gap-2 bg-tertiary text-secondarytext border border-border px-4 py-1 rounded-xl hover:bg-primary hover:text-white hover:border-transparent transition-all"
             >
@@ -101,6 +133,10 @@ const Header: React.FC<PropsType> = ({
         open={showPrinterModal}
         onClose={() => setShowPrinterModal(false)}
       />
+
+      {showOnlineOrders && (
+        <OnlineOrdersModal close={() => setShowOnlineOrders(false)} />
+      )}
     </div>
   );
 };

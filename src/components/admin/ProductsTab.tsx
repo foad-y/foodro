@@ -12,12 +12,18 @@ import {
   ChartColumnStacked,
   Hamburger,
   Printer,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  ListOrdered,
+  RefreshCw,
 } from "lucide-react";
+import { isAxiosError } from "axios";
 import ImageSelect from "../ImageSelect";
 import CategorySelect from "../CategorySelect";
 import axiosInstance from "../../lib/axiosInstance";
 import { Product, useProducts } from "../../hooks/useProduct";
-import { useCategories } from "../../hooks/useCategory";
+import { CategoryItem, useCategories } from "../../hooks/useCategory";
 import { useIngredients } from "../../hooks/useIngredients";
 import { getImageList } from '../../utils/imageList';
 import { Pattern, usePattern } from "../../hooks/usePattern";
@@ -69,11 +75,20 @@ export default function ProductsTab() {
   });
 
   const [page, setPage] = useState(1);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [showCategoryOrder, setShowCategoryOrder] = useState(false);
+  const [dragProductId, setDragProductId] = useState<string | null>(null);
+  const [dragOverProductId, setDragOverProductId] = useState<string | null>(null);
+  const [dragCategoryId, setDragCategoryId] = useState<string | null>(null);
+
+  // چیدمان دستی فقط داخل یک دسته (همه‌ی محصولات دسته در یک صفحه) و بدون جستجو ممکن است
+  const canReorder = !!selectedCategory && !searchTerm;
 
   const { products, pagination, isLoading, mutateProducts } = useProducts({
-    limit: 10,
+    limit: selectedCategory ? 1000 : 10,
     page,
     search: searchTerm,
+    category: selectedCategory,
   });
 
   const totalPages = pagination?.totalPages || 1;
@@ -89,15 +104,28 @@ export default function ProductsTab() {
 
   const handlePrintAllProducts = useCallback(async () => {
     try {
-      const productRows = products
-        .map(
-          (product) => `
+      // همه‌ی محصولات (با فیلتر دسته/جستجوی فعلی) به همان ترتیبی که ادمین چیده
+      const params = new URLSearchParams({ page: "1", limit: "1000" });
+      if (selectedCategory) params.set("category", selectedCategory);
+      if (searchTerm) params.set("search", searchTerm);
+      const res = await axiosInstance.get(`/product?${params.toString()}`);
+      const allProducts: Product[] = res.data?.data ?? [];
+
+      let lastCategoryId: string | undefined;
+      const productRows = allProducts
+        .map((product) => {
+          const catId = product?.category?._id;
+          const header =
+            catId !== lastCategoryId
+              ? `<tr><td colspan="2" style="text-align: center; padding: 6px 8px; background: #f0f0f0; font-weight: 700;">${product?.category?.name || "بدون دسته"}</td></tr>`
+              : "";
+          lastCategoryId = catId;
+          return `${header}
         <tr>
           <td style="text-align: right; padding: 4px 8px; border-bottom: 1px dotted #ccc;">${product.name}</td>
-          <td style="text-align: center; padding: 4px 8px; border-bottom: 1px dotted #ccc;">${categories?.find((c) => c._id === product?.category?._id)?.name || "-"}</td>
           <td style="text-align: left; padding: 4px 8px; border-bottom: 1px dotted #ccc; font-weight: bold;">${product.price.toLocaleString("fa-IR")} تومان</td>
-        </tr>`
-        )
+        </tr>`;
+        })
         .join("");
 
       const html = `<!DOCTYPE html>
@@ -145,7 +173,6 @@ export default function ProductsTab() {
     <thead>
       <tr>
         <th>نام محصول</th>
-        <th>دسته‌بندی</th>
         <th>قیمت</th>
       </tr>
     </thead>
@@ -163,7 +190,167 @@ export default function ProductsTab() {
       console.error("❌ [PRINT] Error printing product list:", err);
       toast.error("خطا در چاپ لیست محصولات");
     }
-  }, [products, categories, storeName]);
+  }, [selectedCategory, searchTerm, storeName]);
+
+  // ───── چیدمان دلخواه (order) ─────
+  type Ordered = { _id: string; order: number };
+
+  // پیام خطای سرور (message + error) برای نمایش در نوتیف
+  const getErrorMessage = (err: unknown) => {
+    if (isAxiosError(err)) {
+      const data = err.response?.data as { message?: string; error?: string } | undefined;
+      const parts = [data?.message, data?.error].filter(Boolean);
+      if (parts.length) return parts.join(" — ");
+      return err.message;
+    }
+    return err instanceof Error ? err.message : "خطای نامشخص";
+  };
+
+  // یک آیتم را بین دو همسایه می‌گذارد؛ اگر جای کافی نبود (409) اول بازچینی و بعد دوباره تلاش می‌کند
+  const sendReorder = async (
+    url: string,
+    rebalanceUrl: string,
+    prev?: Ordered,
+    next?: Ordered,
+    list: Ordered[] = [],
+    // برای سرورهای قدیمی که endpoint بازچینی ندارند: آدرس reorder هر آیتم
+    itemReorderUrl?: (id: string) => string,
+  ) => {
+    const rebalance = async () => {
+      try {
+        await axiosInstance.patch(rebalanceUrl);
+      } catch (err) {
+        // endpoint بازچینی روی سرور نیست (404): آیتم‌ها را پشت‌سرهم با فاصله‌ی ۱۰۰۰ می‌چینیم
+        if (isAxiosError(err) && err.response?.status === 404 && itemReorderUrl && list.length) {
+          for (let i = 0; i < list.length; i++) {
+            await axiosInstance.patch(itemReorderUrl(list[i]._id), {
+              prevId: i > 0 ? list[i - 1]._id : null,
+              nextId: null,
+            });
+          }
+          return;
+        }
+        throw err;
+      }
+    };
+
+    const reorderByIds = () =>
+      axiosInstance.patch(url, {
+        prevId: prev?._id ?? null,
+        nextId: next?._id ?? null,
+      });
+
+    // اگر order بعضی آیتم‌ها برابر باشد (دیتای قدیمی: همه 0) بین‌شان جا نیست؛ اول بازچینی
+    const hasTies = list.some((item, i) => i > 0 && item.order <= list[i - 1].order);
+    if (hasTies) {
+      await rebalance();
+      await reorderByIds();
+      return;
+    }
+    try {
+      await axiosInstance.patch(url, {
+        prevOrder: prev?.order ?? null,
+        nextOrder: next?.order ?? null,
+        prevId: prev?._id ?? null,
+        nextId: next?._id ?? null,
+      });
+    } catch (err) {
+      if (isAxiosError(err) && err.response?.status === 409) {
+        await rebalance();
+        await reorderByIds();
+        return;
+      }
+      throw err;
+    }
+  };
+
+  const moveProduct = async (from: number, to: number) => {
+    if (!canReorder || from === to || to < 0 || to >= products.length) return;
+    const previous = products;
+    const arr = [...products];
+    const [moved] = arr.splice(from, 1);
+    arr.splice(to, 0, moved);
+
+    await mutateProducts((cur) => cur && { ...cur, data: arr }, { revalidate: false });
+    try {
+      await sendReorder(
+        `/product/${moved._id}/reorder`,
+        `/product/category/${selectedCategory}/rebalance`,
+        arr[to - 1],
+        arr[to + 1],
+        previous,
+      );
+      // مطمئن می‌شویم سرور واقعاً ترتیب جدید را ذخیره کرده
+      const fresh = await mutateProducts();
+      if (fresh && fresh.data.map((p) => p._id).join() !== arr.map((p) => p._id).join()) {
+        throw new Error("سرور ترتیب جدید را ذخیره نکرد");
+      }
+      toast.success(`«${moved.name}» با موفقیت جابه‌جا شد ✅`);
+    } catch (err) {
+      console.error("reorder product failed", err);
+      // برگرداندن چیدمان به حالت قبل
+      await mutateProducts((cur) => cur && { ...cur, data: previous }, { revalidate: false });
+      toast.error(`جابه‌جایی محصول انجام نشد ❌ ${getErrorMessage(err)}`);
+      mutateProducts();
+    }
+  };
+
+  const moveCategory = async (from: number, to: number) => {
+    const list = categories ?? [];
+    if (from === to || to < 0 || to >= list.length) return;
+    const arr = [...list];
+    const [moved] = arr.splice(from, 1);
+    arr.splice(to, 0, moved);
+
+    await mutateCategories((cur) => cur && { ...cur, categories: arr }, { revalidate: false });
+    try {
+      await sendReorder(
+        `/product/category/${moved._id}/reorder`,
+        "/product/category/rebalance",
+        arr[to - 1],
+        arr[to + 1],
+        list,
+        (id) => `/product/category/${id}/reorder`,
+      );
+      // مطمئن می‌شویم سرور واقعاً ترتیب جدید را ذخیره کرده
+      const fresh = await mutateCategories();
+      if (
+        fresh?.categories &&
+        fresh.categories.map((c) => c._id).join() !== arr.map((c) => c._id).join()
+      ) {
+        throw new Error("سرور ترتیب جدید را ذخیره نکرد");
+      }
+      toast.success(`دسته‌بندی «${moved.name}» با موفقیت جابه‌جا شد ✅`);
+      mutateProducts();
+    } catch (err) {
+      console.error("reorder category failed", err);
+      // برگرداندن چیدمان به حالت قبل
+      await mutateCategories((cur) => cur && { ...cur, categories: list }, { revalidate: false });
+      toast.error(`جابه‌جایی دسته‌بندی انجام نشد ❌ ${getErrorMessage(err)}`);
+      mutateCategories();
+    }
+  };
+
+  const handleRebalance = async () => {
+    if (!selectedCategory) return;
+    try {
+      await toast.promise(
+        axiosInstance.patch(`/product/category/${selectedCategory}/rebalance`),
+        {
+          pending: "در حال بازچینی...",
+          success: "ترتیب محصولات بازچینی شد ✅",
+          error: {
+            render({ data }) {
+              return `بازچینی با خطا مواجه شد ❌ ${getErrorMessage(data)}`;
+            },
+          },
+        },
+      );
+      mutateProducts();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,35 +506,19 @@ export default function ProductsTab() {
           <p className="text-secondarytext font-medium mt-1">مدیریت و ویرایش محصولات فروشگاه</p>
         </div>
         {!editingId && (
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={handlePrintAllProducts}
-              className="flex cursor-pointer items-center gap-2 bg-white border border-border text-secondarytext px-6 py-3 rounded-xl hover:shadow-md hover:text-primary transition-all duration-300 font-bold"
-              title="چاپ لیست محصولات با قیمت"
-            >
-              <Printer className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setProductDetails(!productDetails)}
-              className="flex cursor-pointer items-center gap-2 bg-secondary text-white px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-secondary/30 transition-all duration-300 font-bold"
-            >
-              <Tag className="w-5 h-5" />
-              توضیحات دسته بندی
-            </button>
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="flex cursor-pointer items-center gap-2 bg-linear-to-r from-gradiantbtnfrom to-gradiantbtnto text-white px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 font-bold"
-            >
-              <Plus className="w-5 h-5" />
-              افزودن محصول
-            </button>
-          </div>
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="flex cursor-pointer items-center gap-2 bg-linear-to-r from-gradiantbtnfrom to-gradiantbtnto text-white px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 font-bold"
+          >
+            <Plus className="w-5 h-5" />
+            افزودن محصول
+          </button>
         )}
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative">
+      {/* Search Bar + ابزارها */}
+      <div className="mb-6 flex flex-col lg:flex-row gap-3">
+        <div className="relative flex-1">
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-tertiarytext" />
           <input
             type="text"
@@ -360,7 +531,130 @@ export default function ProductsTab() {
             className="w-full pr-12 pl-4 py-3 border-2 border-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all bg-white text-primarytext font-medium outline-hidden"
           />
         </div>
+
+        {!editingId && (
+          <div className="flex gap-3 flex-wrap">
+            <button
+              onClick={() => setProductDetails(!productDetails)}
+              className={`flex cursor-pointer items-center justify-center gap-2 bg-secondary text-white px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-secondary/30 transition-all duration-300 font-bold ${
+                productDetails ? "ring-4 ring-primary/30" : ""
+              }`}
+            >
+              <Tag className="w-5 h-5" />
+              توضیحات دسته بندی
+            </button>
+            <button
+              onClick={() => setShowCategoryOrder(!showCategoryOrder)}
+              className={`flex cursor-pointer items-center justify-center gap-2 bg-secondary text-white px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-secondary/30 transition-all duration-300 font-bold ${
+                showCategoryOrder ? "ring-4 ring-primary/30" : ""
+              }`}
+              title="چیدمان دسته‌بندی‌ها"
+            >
+              <ListOrdered className="w-5 h-5" />
+              ترتیب دسته‌بندی‌ها
+            </button>
+            <button
+              onClick={handlePrintAllProducts}
+              className="flex cursor-pointer items-center justify-center gap-2 bg-white border border-border text-secondarytext px-6 py-3 rounded-xl hover:shadow-md hover:text-primary transition-all duration-300 font-bold"
+              title="چاپ لیست محصولات با قیمت (به ترتیب چیدمان)"
+            >
+              <Printer className="w-5 h-5" />
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Category order panel */}
+      {showCategoryOrder && (
+        <div className="bg-tertiary/30 p-6 rounded-3xl mb-6 border border-border shadow-lg">
+          <h3 className="text-lg font-bold text-secondary mb-1 flex items-center gap-2">
+            <ListOrdered className="w-5 h-5 text-primary" />
+            چیدمان دسته‌بندی‌ها
+          </h3>
+          <p className="text-sm text-secondarytext font-medium mb-4">
+            دسته‌بندی‌ها را بکشید و رها کنید (یا از فلش‌ها استفاده کنید). این ترتیب در
+            صندوق و چاپ لیست هم اعمال می‌شود.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {(categories ?? []).map((cat: CategoryItem, i: number) => (
+              <div
+                key={cat._id}
+                draggable
+                onDragStart={() => setDragCategoryId(cat._id)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => {
+                  const from = (categories ?? []).findIndex((c) => c._id === dragCategoryId);
+                  setDragCategoryId(null);
+                  if (from >= 0) moveCategory(from, i);
+                }}
+                onDragEnd={() => setDragCategoryId(null)}
+                className={`flex items-center gap-1 bg-white border border-border shadow-sm rounded-xl px-2 py-2 cursor-grab select-none hover:bg-primary/10 transition-colors ${
+                  dragCategoryId === cat._id ? "opacity-40" : ""
+                }`}
+              >
+                <GripVertical className="w-4 h-4 text-tertiarytext" />
+                <span className="text-xs font-bold text-primary">{(i + 1).toLocaleString("fa-IR")}</span>
+                <span className="text-sm font-bold text-primarytext px-1">{cat.name}</span>
+                <button
+                  type="button"
+                  onClick={() => moveCategory(i, i - 1)}
+                  disabled={i === 0}
+                  className="p-0.5 rounded hover:bg-primary/20 disabled:opacity-30 cursor-pointer"
+                  title="جلوتر"
+                >
+                  <ChevronUp className="w-4 h-4 rotate-90" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveCategory(i, i + 1)}
+                  disabled={i === (categories?.length ?? 0) - 1}
+                  className="p-0.5 rounded hover:bg-primary/20 disabled:opacity-30 cursor-pointer"
+                  title="عقب‌تر"
+                >
+                  <ChevronDown className="w-4 h-4 rotate-90" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Category filter */}
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        {[{ _id: "", name: "همه" } as Partial<CategoryItem>, ...(categories ?? [])].map((cat) => (
+          <button
+            key={cat._id || "all"}
+            type="button"
+            onClick={() => {
+              setSelectedCategory(cat._id ?? "");
+              setPage(1);
+            }}
+            className={`px-4 py-2 rounded-xl cursor-pointer border text-sm font-bold transition-all ${
+              selectedCategory === (cat._id ?? "")
+                ? "bg-primary text-white border-primary shadow"
+                : "bg-white border-border text-secondarytext hover:border-primary hover:text-primary"
+            }`}
+          >
+            {cat.name}
+          </button>
+        ))}
+        {canReorder && (
+          <button
+            type="button"
+            onClick={handleRebalance}
+            className="mr-auto flex items-center gap-1 px-4 py-2 rounded-xl cursor-pointer border border-border bg-white text-secondarytext hover:text-primary hover:border-primary transition-all text-sm font-bold"
+            title="بازچینی یکنواخت اولویت محصولات این دسته"
+          >
+            <RefreshCw className="w-4 h-4" />
+            بازچینی اولویت‌ها
+          </button>
+        )}
+      </div>
+      {!selectedCategory && (
+        <p className="text-xs text-secondarytext font-medium -mt-3 mb-4">
+          برای چیدمان دلخواه محصولات، یک دسته‌بندی را انتخاب کنید.
+        </p>
+      )}
 
       {/* Product Form */}
       {showForm && (
@@ -587,6 +881,11 @@ export default function ProductsTab() {
           <table className="w-full">
             <thead className="bg-tertiary/50 border-b border-border">
               <tr>
+                {canReorder && (
+                  <th className="px-3 py-4 text-right text-sm font-bold text-secondary w-28">
+                    اولویت
+                  </th>
+                )}
                 <th className="px-6 py-4 text-right text-sm font-bold text-secondary">
                   نام محصول
                 </th>
@@ -604,14 +903,14 @@ export default function ProductsTab() {
             <tbody className="divide-y divide-border">
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="py-16 text-center">
+                  <td colSpan={canReorder ? 5 : 4} className="py-16 text-center">
                     <div className="inline-block w-10 h-10 border-4 border-border border-t-primary rounded-full animate-spin"></div>
                     <p className="text-secondarytext font-bold mt-3">در حال بارگذاری...</p>
                   </td>
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-16 text-center text-secondarytext font-bold">
+                  <td colSpan={canReorder ? 5 : 4} className="py-16 text-center text-secondarytext font-bold">
                     <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20">
                       <Hamburger className="w-8 h-8 text-primary" />
                     </div>
@@ -624,9 +923,62 @@ export default function ProductsTab() {
                 products?.map((product, index) => (
                   <tr
                     key={product._id}
-                    className="hover:bg-tertiary transition-colors duration-200"
+                    draggable={canReorder}
+                    onDragStart={() => setDragProductId(product._id)}
+                    onDragOver={(e) => {
+                      if (!canReorder || !dragProductId) return;
+                      e.preventDefault();
+                      setDragOverProductId(product._id);
+                    }}
+                    onDrop={() => {
+                      const from = products.findIndex((p) => p._id === dragProductId);
+                      setDragProductId(null);
+                      setDragOverProductId(null);
+                      if (from >= 0) moveProduct(from, index);
+                    }}
+                    onDragEnd={() => {
+                      setDragProductId(null);
+                      setDragOverProductId(null);
+                    }}
+                    className={`hover:bg-tertiary transition-colors duration-200 ${
+                      dragProductId === product._id ? "opacity-40" : ""
+                    } ${
+                      dragOverProductId === product._id && dragProductId !== product._id
+                        ? "bg-primary/10"
+                        : ""
+                    }`}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
+                    {canReorder && (
+                      <td className="px-3 py-4 text-sm">
+                        <div className="flex items-center gap-1 text-tertiarytext">
+                          <GripVertical className="w-5 h-5 cursor-grab" />
+                          <span className="font-bold text-secondary w-6 text-center">
+                            {(index + 1).toLocaleString("fa-IR")}
+                          </span>
+                          <div className="flex flex-col">
+                            <button
+                              type="button"
+                              onClick={() => moveProduct(index, index - 1)}
+                              disabled={index === 0}
+                              className="hover:text-primary disabled:opacity-30 cursor-pointer"
+                              title="بالاتر"
+                            >
+                              <ChevronUp className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveProduct(index, index + 1)}
+                              disabled={index === products.length - 1}
+                              className="hover:text-primary disabled:opacity-30 cursor-pointer"
+                              title="پایین‌تر"
+                            >
+                              <ChevronDown className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    )}
                     <td className="px-6 py-4 text-sm font-bold text-primarytext">
                       {product.name}
                     </td>

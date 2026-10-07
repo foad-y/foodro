@@ -11,6 +11,7 @@ export interface CategoryItem {
   created_at: string
   img: string
   name: string
+  order: number
   updatedAt: string
   _id: string
 }

@@ -12,6 +12,8 @@ import {
   X,
   Search,
   Lock,
+  Eye,
+  EyeOff,
   Phone,
   User,
   Calendar,
@@ -27,6 +29,7 @@ import Pagination from "../ui/Pagination";
 export default function EmployeesTab() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [formData, setFormData] = useState({
@@ -109,6 +112,7 @@ export default function EmployeesTab() {
   };
 
   const cancelForm = () => {
+    setShowPassword(false);
     setShowForm(false);
     setEditingId(null);
     setFormData({
@@ -235,26 +239,39 @@ export default function EmployeesTab() {
               onChange={(val) => setFormData({ ...formData, role: val })}
             />
 
-            {!editingId && (
-              <div className="group">
-                <label className="block text-sm font-bold text-secondary mb-2">
-                  رمز عبور
-                </label>
-                <div className="relative">
-                  <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-tertiarytext group-focus-within:text-primary transition-colors" />
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="w-full pr-11 pl-4 py-3 border-2 border-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all bg-white text-primarytext font-medium outline-hidden"
-                    placeholder="رمز عبور"
-                    required={!editingId}
-                  />
-                </div>
+            <div className="group">
+              <label className="block text-sm font-bold text-secondary mb-2">
+                {editingId ? "رمز عبور جدید" : "رمز عبور"}
+              </label>
+              <div className="relative">
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-tertiarytext group-focus-within:text-primary transition-colors" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  className="w-full pr-11 pl-12 py-3 border-2 border-border rounded-xl focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all bg-white text-primarytext font-medium outline-hidden"
+                  placeholder={editingId ? "برای تغییر نکردن خالی بگذارید" : "رمز عبور"}
+                  required={!editingId}
+                  minLength={4}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-tertiarytext hover:text-primary transition-colors cursor-pointer"
+                  title={showPassword ? "مخفی کردن رمز" : "نمایش رمز"}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
-            )}
+              {editingId && (
+                <p className="text-xs text-secondarytext mt-1">
+                  با ثبت رمز جدید، رمز قبلی این کاربر تغییر می‌کند. اگر خالی بماند رمز تغییری نمی‌کند.
+                </p>
+              )}
+            </div>
 
             <div className="group">
               <label className="block text-sm font-bold text-secondary mb-2">
